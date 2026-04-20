@@ -17,126 +17,136 @@ Bu proje, **Meta-Engineering Research Lab (MERL)** bünyesinde, en zorlu coğraf
 
 ---
 
-## 🐺 Mitolojik Arka Plan
-Türk kozmolojisinde dünya üç katmandan oluşur. **BARAK**, bu katmanlar arasında form değiştirmeden hareket edebilen nadir bir iradeyi temsil eder:
-* **Gök (Hava):** Kanatlanıp süzülen bir kartal kadar özgür.
-* **Yer (Kara):** En sarp kayalıkları ve karlı ovaları aşan paletli bir kurt.
-* **Su:** Ak Ana'nın diyarında yolunu bulan amfibik bir güç.
+## 🐺 Kozmolojik Mimari: Bayterek ve Budak
 
----
+Türk kozmolojisinde dünya, kökleri göğün yedi kat derinine, dalları ise sonsuzluğa uzanan **Bayterek (Hayat Ağacı)** tarafından dengelenir. **BARAK**, bu ağacın koruyucusu ve üç alem (Gök, Yer, Su) arasındaki tek elçidir.
 
-## 🏗️ Teknik Mimari ve "Budak" Entegrasyonu
+*   **Bayterek (Sistem Topolojisi):** Tüm otonom birimlerin bağlı olduğu merkezi veri ağacı.
+*   **Budak (Edge-AI):** Bayterek'in her bir birime uzanan uç noktası. BARAK'ın yerel zekasını temsil eder.
 
-BARAK, gücünü sadece mekanik yapısından değil, **Budak | Edge-AI Optimization** katmanından alır.
-
-### 🧠 Akıllı Katmanlar
-1.  **Umay-Core (Navigasyon):** ROS2 Humble üzerinde koşan, otonom rota planlama ve engelden sakınma algoritması.
-2.  **Mergen-Vision (Algılama):** Pruning ve Quantization işlemlerinden geçmiş, düşük gecikmeli nesne tanıma sistemi. Arazi tipini (Kar/Su/Toprak) mikro-saniyeler içinde analiz eder.
-3.  **Toghrul-Drive (Kontrol):** Pervane devri ile palet torku arasındaki hassas dengeyi sağlayan hibrit sürücü mimarisi.
-
-### 🛠️ Sistem Akış Şeması
 ```mermaid
-graph TD
-    A[Sensör Verileri: LiDAR, IMU, Kameralar] --> B[Mergen-Vision: Nesne ve Zemin Analizi]
-    B --> C{Umay-Core: Karar Mekanizması}
-    C -->|Engel Var| D[Yol Planlama: Rota Revizyonu]
-    C -->|Yol Açık| E[Hedef Takibi]
-    D --> F[Budak: Kenar Cihaz Optimizasyonu]
-    E --> F
-    F --> G[Toghrul-Drive: Motor ve ESC Kontrolü]
-    G --> H[Fiziksel Hareket: Hava/Kara/Su]
+graph LR
+    subgraph Bayterek_merkezi_sistem
+    M[Cloud/Base Station]
+    end
+    M --- B1[Budak 01]
+    M --- B2[Budak 02]
+    B1 --- R1[BARAK Unit 01]
+    B2 --- R2[BARAK Unit 02]
+    
+    style R1 fill:#f9f,stroke:#333,stroke-width:4px
+    style R2 fill:#f9f,stroke:#333,stroke-width:4px
+    style M fill:#bbf,stroke:#333,stroke-width:2px
 ```
 
 ---
 
-## 🚀 Öne Çıkan Özellikler
+## 🏗️ Teknik Derin Bakış: ROS2 Modüler Ekosistem
 
-| Özellik | Tanımlama |
-| :--- | :--- |
-| **Amfibik İtki** | Su yüzeyinde batmadan ilerleme ve anlık dikey kalkış (VTOL) yeteneği. |
-| **All-Terrain Tracks** | Kar, çamur ve uzun otlar gibi tekerlekli araçların saplandığı zeminlerde yüksek tutunuş. |
-| **Security by Design** | Mimari seviyede hardened (sertleştirilmiş) haberleşme protokolleri ile elektronik harp dayanımı. |
-| **Swarm Ready** | Birden fazla BARAK ünitesinin sürü zekası ile koordineli arama-kurtarma yapabilmesi. |
+BARAK sistemi, yüksek modülerlik ve hata payını minimize eden bir ROS2 yapısı üzerine kurulmuştur.
+
+### 📦 Paket Dağılımı
+
+1.  **`barak_common` (Interfaces):**
+    - Sistemin ortak dilini konuşur. `HybridState` ve `Telemetry` gibi özel mesaj tiplerini içerir.
+    - Tüm modüller arasındaki veri tutarlılığını sağlar.
+
+2.  **`barak_perception` (Mergen-Vision):**
+    - **Algılama:** TensorRT ve OpenVINO ile optimize edilmiş derin öğrenme modellerini çalıştırır.
+    - **Zemin Analizi:** Arazi tipini (Kar/Su/Toprak) mikro saniyeler içinde analiz ederek navigasyon katmanına "kabiliyet kısıtı" raporlar.
+
+3.  **`barak_navigation` (Umay-Core):**
+    - **Gök-Yer-Su Rotası:** Klasik Nav2 paketlerinin ötesinde, 3D uzay ve su yüzeyi fiziğini anlık olarak rota planlamasına dahil eder.
+
+4.  **`barak_locomotion` (Toghrul-Drive):**
+    - **Hibrit Aktüasyon:** Palet torku ile pervane devri arasındaki geçişi yönetir. "Amfibik Mod" ve "VTOL Mod" geçişleri burada gerçekleşir.
+
+5.  **`barak_comms` (Security Layer):**
+    - **Kadim Anahtar:** MERL tarafından geliştirilen, uçtan uca şifrelenmiş ve RSA/AES tabanlı güvenli haberleşme katmanı.
+
+6.  **`barak_description` & `barak_simulation`:**
+    - Sistemin dijital ikizini (URDF/Xacro) ve Gazebo Harmonic üzerindeki fiziksel simülasyon ortamlarını barındırır.
+
+---
+
+## 🛡️ Güvenlik Protokolleri (Security by Design)
+
+Otonom sistemlerde "siber-fiziksel" güvenlik, tasarımın bir parçası olmalıdır. BARAK, her telemetri verisini bir **"Kadim Anahtar"** (Unique Signature) ile imzalar.
+
+```python
+# barak_comms örneği
+telemetry_msg.encrypted_payload = base64.b64encode(raw_data).decode()
+telemetry_msg.signature = hashlib.sha256((encrypted + secret_key).encode()).hexdigest()
+```
+
+---
+
+## 🚀 Öne Çıkan Özellikler ve Mod Değişimi
+
+| Mod | İtki Sistemi | Meera / Ortam | Öncelik |
+| :--- | :--- | :--- | :--- |
+| **Terrestrial** | All-Terrain Palet | Kar, Çamur, Kaya | Tork ve Denge |
+| **Aerial** | Quad-Propeller (VTOL) | Atmosferik Keşif | Hız ve Görüş Alanı |
+| **Maritime** | Amfibik Jet İtki | Sığ Su, Bataklık | Sızdırmazlık ve Stabilite |
 
 ---
 
 ## 💻 Teknoloji Yığını (Tech Stack)
 
-### Donanım (Hardware)
-- **Ana İşlemci:** NVIDIA Jetson Orin Nano / Xavier NX
-- **Uçuş Kontrolcü:** Pixhawk 6C (PX4 Autopilot)
-- **Sensör Seti:** Ouster OS1 LiDAR, Intel RealSense D435i, Su Geçirmez Ultrasonik Sensörler
-
-### Yazılım (Software)
-- **İşletim Sistemi:** Ubuntu 22.04 LTS
-- **Middleware:** ROS2 Humble Hawksbill
-- **AI Frameworks:** TensorRT, ONNX Runtime
-- **Simülasyon:** Gazebo Harmonic & Unity (Amfibik fizik desteği)
+### Donanım Teknik Özellikleri
+| Bileşen | Model | Açıklama |
+| :--- | :--- | :--- |
+| **Compute Node** | NVIDIA Jetson Orin Nano | 40 TOPS AI Performansı |
+| **Flight Controller** | Pixhawk 6C | PX4 Autopilot Stack |
+| **LiDAR** | Ouster OS1 (32 Channel) | 120m Menzilli 3D Haritalama |
+| **Visual Depth** | Intel RealSense D435i | Engel Sakınma ve SLAM |
+| **Chassis** | Carbon Fiber Reinforced | Hafif ve Yüksek Dayanımlı |
 
 ---
 
-## 📂 Depo Yapısı (Repo Structure)
+## ⚡ Simülasyon ve Deploy
 
-```text
-BARAK/
-├── assets/             # Görsel materyaller ve dokümantasyon grafikleri
-├── firmware/           # ESC ve Uçuş Kontrolcü (PX4) parametreleri
-├── hardware/           # 3D Baskı ve Karbon Fiber Şasi tasarımları (CAD)
-├── src/
-│   ├── perception/     # Budak ile optimize edilmiş TensorRT/OpenVINO modelleri
-│   ├── locomotion/     # Kara ve Hava modları arası geçiş mantığı
-│   ├── comms/          # Şifrelenmiş veri iletim katmanı
-├── simulation/         # Gazebo "Snow & Water" fiziksel ortam simülasyonları
+### Simülasyonu Başlatma
+Dijital ikizi RViz ve Gazebo üzerinde görüntülemek için:
+```bash
+ros2 launch barak_bringup barak_system.launch.py
+```
+
+### Budak Optimizasyonu
+Modelleri Jetson üzerinde derlemek için:
+```bash
+# src/barak_perception içinde
+python3 tools/optimize_model.py --model perception_v4.onnx --target tensorrt
 ```
 
 ---
 
-## ⚡ Hızlı Başlangıç (Getting Started)
+## ⚖️ Sorumlu Otonomi (Ethical AI)
 
-### Bağımlılıkların Kurulumu
-```bash
-# ROS2 Humble kurulu olmalıdır
-sudo apt update && sudo apt install -y ros-humble-desktop ros-humble-navigation2
-```
-
-### Kurulum
-```bash
-mkdir -p ~/barak_ws/src
-cd ~/barak_ws/src
-git clone https://github.com/arch-yunus/BARAK-Hibrit-Mobilite-ve-Otonom-Kesif-Sistemi.git
-cd ..
-colcon build --symlink-install
-source install/setup.bash
-```
+BARAK projesi, **MERL Otonomi İlkeleri** uyarınca geliştirilmiştir:
+1.  **Human-in-the-Loop:** Kritik karar anlarında insan operatör denetimi.
+2.  **Fail-Safe:** İletişim kaybı durumunda "En Yakın Güvenli Nokta" (Safety Point) navigasyonu.
+3.  **Veri Gizliliği:** Keşif verilerinin yerel işlenmesi (Edge-AI) ve gizliliği.
 
 ---
 
 ## 🗺️ Geliştirme Yol Haritası
 
-- [x] **Başlangıç:** Depo yapısının oluşturulması ve dokümantasyon temeli.
-- [ ] **Faz 1:** Karbon-fiber takviyeli hafifletilmiş palet mekanizmasının üretimi.
+- [x] **Faz 0:** Mimari tasarım ve ROS2 iskelet kurulumu.
+- [/] **Faz 1:** Karbon-fiber takviyeli hafifletilmiş palet mekanizmasının üretimi.
 - [ ] **Faz 2:** Arazi tipine göre enerji tüketimini optimize eden "Dynamic Power Switching" algoritması.
 - [ ] **Faz 3:** Su altı sonar sensörleri ile sığ su navigasyonu eklenmesi.
 - [ ] **Faz 4:** "Monk Mode" otonomi; dış müdahale olmadan 48 saatlik keşif görevi senaryosu.
 
 ---
 
-## 🤝 Katkıda Bulunma
-Katkılarınızı bekliyoruz! Lütfen önce bir `issue` açarak neyi değiştirmek istediğinizi tartışın.
+## 🤝 Katkıda Bulunma ve Ekip
+**Meta-Engineering Research Lab (MERL)** olarak otonomi ve robotik tutkunlarını aramızda görmekten mutluluk duyarız.
 
-1. Depoyu forklayın
-2. Özellik dalınızı oluşturun (`git checkout -b feature/YeniOzellik`)
-3. Değişikliklerinizi commit yapın (`git commit -m 'Yeni özellik eklendi'`)
-4. Dalınıza push yapın (`git push origin feature/YeniOzellik`)
-5. Bir Pull Request açın
+📧 **İletişim:** [info@merl.lab](mailto:info@merl.lab)  
+🌐 **Lab:** [github.com/arch-yunus](https://github.com/arch-yunus)
 
 ---
 
 ## 📜 Lisans
-Bu proje **MIT Lisansı** altında lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına bakabilirsiniz.
-
----
-
-## 👥 Ekip ve İletişim
-**Meta-Engineering Research Lab (MERL)**  
-📧 [info@merl.lab](mailto:info@merl.lab)
+Bu proje **MIT Lisansı** altında lisanslanmıştır. © 2026 MERL.
