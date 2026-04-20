@@ -19,30 +19,41 @@
         <box size="0.6 0.4 0.2"/>
       </geometry>
     </collision>
+    <inertial>
+      <mass value="5.0"/>
+      <inertia ixx="0.08" ixy="0" ixz="0" iyy="0.16" iyz="0" izz="0.2"/>
+    </inertial>
   </link>
 
-  <!-- Track Links (Simplified as boxes for now) -->
-  <link name="left_track">
+  <!-- Sensors: LiDAR -->
+  <link name="lidar_link">
     <visual>
-      <geometry>
-        <box size="0.5 0.1 0.15"/>
-      </geometry>
+      <geometry><cylinder radius="0.05" length="0.05"/></geometry>
     </visual>
   </link>
-
-  <joint name="left_track_joint" type="fixed">
+  <joint name="lidar_joint" type="fixed">
     <parent link="base_link"/>
-    <child link="left_track"/>
-    <origin xyz="0 0.25 -0.05"/>
+    <child link="lidar_link"/>
+    <origin xyz="0.2 0 0.15"/>
   </joint>
 
-  <!-- Propeller Links -->
+  <!-- Sensors: Camera -->
+  <link name="camera_link">
+    <visual>
+      <geometry><box size="0.02 0.1 0.02"/></geometry>
+    </visual>
+  </link>
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.3 0 0.05"/>
+  </joint>
+
+  <!-- Propeller Macro -->
   <xacro:macro name="propeller" params="name x y">
     <link name="${name}_prop">
       <visual>
-        <geometry>
-          <cylinder radius="0.1" length="0.02"/>
-        </geometry>
+        <geometry><cylinder radius="0.15" length="0.01"/></geometry>
       </visual>
     </link>
     <joint name="${name}_prop_joint" type="continuous">
@@ -57,5 +68,38 @@
   <xacro:propeller name="front_right" x="0.25" y="-0.2"/>
   <xacro:propeller name="back_left" x="-0.25" y="0.2"/>
   <xacro:propeller name="back_right" x="-0.25" y="-0.2"/>
+
+  <!-- GAZEBO PLUGINS -->
+  <gazebo reference="lidar_link">
+    <sensor type="ray" name="ouster_lidar">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal><samples>360</samples><resolution>1</resolution><min_angle>-3.14</min_angle><max_angle>3.14</max_angle></horizontal>
+        </scan>
+        <range><min>0.1</min><max>120.0</max><resolution>0.01</resolution></range>
+      </ray>
+      <plugin name="gazebo_ros_lidar" filename="libgazebo_ros_ray_sensor.so">
+        <ros><remapping>~/out:=/barak/scan</remapping></ros>
+        <output_type>sensor_msgs/PointCloud2</output_type>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="camera_link">
+    <sensor type="camera" name="realsense_camera">
+      <update_rate>30.0</update_rate>
+      <camera name="head">
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image><width>800</width><height>600</height><format>R8G8B8</format></image>
+        <clip><near>0.02</near><far>300</far></clip>
+      </camera>
+      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+        <ros><remapping>~/image_raw:=/camera/image_raw</remapping></ros>
+      </plugin>
+    </sensor>
+  </gazebo>
 
 </robot>
