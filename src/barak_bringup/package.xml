@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>barak_bringup</name>
+  <version>0.0.1</version>
+  <description>Launch and setup configurations for the BARAK system.</description>
+  <maintainer email="info@merl.lab">MERL</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>barak_common</exec_depend>
+  <exec_depend>barak_perception</exec_depend>
+  <exec_depend>barak_navigation</exec_depend>
+  <exec_depend>barak_locomotion</exec_depend>
+  <exec_depend>barak_comms</exec_depend>
+  <exec_depend>barak_description</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

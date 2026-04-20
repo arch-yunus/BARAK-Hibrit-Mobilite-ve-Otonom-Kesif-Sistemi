@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot name="barak" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Materials -->
+  <material name="carbon_fiber">
+    <color rgba="0.1 0.1 0.1 1.0"/>
+  </material>
+
+  <!-- Base Link -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="0.6 0.4 0.2"/>
+      </geometry>
+      <material name="carbon_fiber"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.6 0.4 0.2"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Track Links (Simplified as boxes for now) -->
+  <link name="left_track">
+    <visual>
+      <geometry>
+        <box size="0.5 0.1 0.15"/>
+      </geometry>
+    </visual>
+  </link>
+
+  <joint name="left_track_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="left_track"/>
+    <origin xyz="0 0.25 -0.05"/>
+  </joint>
+
+  <!-- Propeller Links -->
+  <xacro:macro name="propeller" params="name x y">
+    <link name="${name}_prop">
+      <visual>
+        <geometry>
+          <cylinder radius="0.1" length="0.02"/>
+        </geometry>
+      </visual>
+    </link>
+    <joint name="${name}_prop_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}_prop"/>
+      <origin xyz="${x} ${y} 0.1"/>
+      <axis xyz="0 0 1"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:propeller name="front_left" x="0.25" y="0.2"/>
+  <xacro:propeller name="front_right" x="0.25" y="-0.2"/>
+  <xacro:propeller name="back_left" x="-0.25" y="0.2"/>
+  <xacro:propeller name="back_right" x="-0.25" y="-0.2"/>
+
+</robot>
