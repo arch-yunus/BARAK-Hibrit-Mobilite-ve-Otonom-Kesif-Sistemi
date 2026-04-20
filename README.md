@@ -45,49 +45,78 @@ graph LR
 
 BARAK sistemi, yüksek modülerlik ve hata payını minimize eden bir ROS2 yapısı üzerine kurulmuştur.
 
-### 📦 Paket Dağılımı
-
-1.  **`barak_common` (Interfaces):**
-    - Sistemin ortak dilini konuşur. `HybridState` ve `Telemetry` gibi özel mesaj tiplerini içerir.
-    - Tüm modüller arasındaki veri tutarlılığını sağlar.
-
-2.  **`barak_perception` (Mergen-Vision):**
-    - **Algılama:** TensorRT ve OpenVINO ile optimize edilmiş derin öğrenme modellerini çalıştırır.
-    - **Zemin Analizi:** Arazi tipini (Kar/Su/Toprak) mikro saniyeler içinde analiz ederek navigasyon katmanına "kabiliyet kısıtı" raporlar.
-
-3.  **`barak_navigation` (Umay-Core):**
-    - **Gök-Yer-Su Rotası:** Klasik Nav2 paketlerinin ötesinde, 3D uzay ve su yüzeyi fiziğini anlık olarak rota planlamasına dahil eder.
-
-4.  **`barak_locomotion` (Toghrul-Drive):**
-    - **Hibrit Aktüasyon:** Palet torku ile pervane devri arasındaki geçişi yönetir. "Amfibik Mod" ve "VTOL Mod" geçişleri burada gerçekleşir.
-
-5.  **`barak_comms` (Security Layer):**
-    - **Kadim Anahtar:** MERL tarafından geliştirilen, uçtan uca şifrelenmiş ve RSA/AES tabanlı güvenli haberleşme katmanı.
-
-6.  **`barak_description` & `barak_simulation`:**
-    - Sistemin dijital ikizini (URDF/Xacro) ve Gazebo Harmonic üzerindeki fiziksel simülasyon ortamlarını barındırır.
-
----
-
-## 🛡️ Güvenlik Protokolleri (Security by Design)
-
-Otonom sistemlerde "siber-fiziksel" güvenlik, tasarımın bir parçası olmalıdır. BARAK, her telemetri verisini bir **"Kadim Anahtar"** (Unique Signature) ile imzalar.
-
-```python
-# barak_comms örneği
-telemetry_msg.encrypted_payload = base64.b64encode(raw_data).decode()
-telemetry_msg.signature = hashlib.sha256((encrypted + secret_key).encode()).hexdigest()
+### 🍱 Depo Hiyerarşisi (Detailed File Tree)
+```text
+BARAK/
+├── assets/                 # Görsel materyaller ve bannerlar
+├── firmware/               # PX4 parametreleri ve ESC konfigürasyonları
+├── hardware/               # Karbon fiber şasi CAD ve 3D çizimler
+├── src/
+│   ├── barak_common/       # Ortak arayüzler ve mesaj tipleri (msg/)
+│   ├── barak_perception/   # Mergen-Vision: AI çıkarım motoru (Python)
+│   ├── barak_navigation/   # Umay-Core: Hibrit rota planlama
+│   ├── barak_locomotion/   # Toghrul-Drive: Aktüatör ve mod kontrolü
+│   ├── barak_comms/        # Sistem içi ve dışı güvenli haberleşme
+│   ├── barak_description/  # Robot URDF/Xacro ve 3D modeller (meshes/)
+│   ├── barak_bringup/      # Sistem genelini ayağa kaldıran launch dosyaları
+│   └── barak_simulation/   # Gazebo ve fiziksel dünya parametreleri
 ```
 
+### 📦 Paket Fonksiyonları
+
+1.  **`barak_common`**: `HybridState.msg` (Mod bilgisi, Batarya) ve `Telemetry.msg` (Şifreli veri) tiplerini içerir.
+2.  **`barak_perception`**: Mergen-Vision: Jetson Orin üzerinde **TensorRT** optimizasyonuyla düşük gecikmeli nesne tanıma gerçekleştirir.
+3.  **`barak_navigation`**: Umay-Core: Zemin tipine (Bataklık, Kar, Açık Hava) göre dinamik maliyet haritası (costmap) oluşturur.
+4.  **`barak_locomotion`**: Toghrul-Drive: Pervanelerin su altı jeti mi yoksa uçuş pervanesi mi olarak çalışacağına karar verir.
+5.  **`barak_comms`**: RSA imzalı paketler ile elektronik harbe karşı direnç sağlar.
+
 ---
 
-## 🚀 Öne Çıkan Özellikler ve Mod Değişimi
+## 🗺️ Operasyonel Senaryolar (Use-Cases)
 
-| Mod | İtki Sistemi | Meera / Ortam | Öncelik |
+### 🏔️ Arama-Kurtarma (SAR)
+Sarp ve karlı arazilerde, paletleri sayesinde ilerlerken, ulaşılamayan uçurum kenarlarına drone moduna geçerek (VTOL) iniş yapabilir.
+- **Hedef:** Isı imzası tespiti ve acil yardım kiti teslimatı.
+
+### 🌊 Bataklık ve Kıyı Gözlemi
+Sığ suların ve bataklıkların olduğu bölgelerde (Amfibik mod), batmadan ilerleyebilir ve su yüzeyinden veri toplayabilir.
+- **Hedef:** Çevresel kirlilik analizi ve kıyı sınır güvenliği.
+
+### 🏙️ Şehir Dışı Otonom Keşif
+"Monk Mode" özelliği ile 48 saatlik kesintisiz, insan müdahalesi olmadan keşif görevleri yürütebilir.
+- **Hedef:** Stratejik bölgelerin haritalandırılması.
+
+---
+
+## 🔌 API ve Topic Referansı
+
+| Topic | Mesaj Tipi | Yayımlayan | Açıklama |
 | :--- | :--- | :--- | :--- |
-| **Terrestrial** | All-Terrain Palet | Kar, Çamur, Kaya | Tork ve Denge |
-| **Aerial** | Quad-Propeller (VTOL) | Atmosferik Keşif | Hız ve Görüş Alanı |
-| **Maritime** | Amfibik Jet İtki | Sığ Su, Bataklık | Sızdırmazlık ve Stabilite |
+| `/barak/terrain_info` | `HybridState` | `barak_perception` | Analiz edilen zemin ve mod önerisi. |
+| `/barak/global_path` | `nav_msgs/Path` | `barak_navigation` | Mevcut mod için planlanan rota. |
+| `/barak/current_status`| `HybridState` | `barak_locomotion` | Sistemin aktif modu ve donanım sağlığı. |
+| `/barak/secure_telemetry`| `Telemetry` | `barak_comms` | Şifrelenmiş ve imzalanmış telemetri paketi. |
+| `/cmd_vel` | `geometry_msgs/Twist` | `barak_navigation` | Motor ve pervane hızı komutları. |
+
+---
+
+## 🛡️ Güvenlik ve Acil Durum (Fail-Safe) Protokolleri
+
+BARAK, kritik durumlarda otonom karar vererek platformun güvenliğini sağlar:
+
+1.  **İletişim Kaybı (Comms Lost):** 30 saniye boyunca baz istasyonuna bağlanamazsa, otonom olarak `RTH` (Return to Home) protokolünü başlatır.
+2.  **Kritik Batarya Seviyesi (<15%):** Görevi iptal eder ve olduğu yere güvenli iniş (Safe Landing) veya üsse dönüş yapar.
+3.  **Zemin Değişimi:** Mergen-Vision, paletli ilerlemenin riskli olduğu bir zemin tespit ederse (örn. aşırı derin su), sistemi otomatik olarak uçuş moduna geçirir.
+
+---
+
+## 🧠 Budak AI: TensorRT Optimizasyon Akışı
+
+Perception katmanında kullanılan modellerin optimizasyon süreci:
+1.  **Eğitim:** PyTorch/TensorFlow ortamında özel veri setleri (Kar/Su/Arazi) ile eğitim.
+2.  **Export:** Modelin **ONNX** formatına dönüştürülmesi.
+3.  **Optimization:** Jetson üzerinde **TensorRT** motoru oluşturulması (FP16/INT8 Quantization).
+4.  **Deployment:** `barak_perception` üzerinden 60+ FPS ile gerçek zamanlı çıkarım.
 
 ---
 
@@ -107,17 +136,13 @@ telemetry_msg.signature = hashlib.sha256((encrypted + secret_key).encode()).hexd
 ## ⚡ Simülasyon ve Deploy
 
 ### Simülasyonu Başlatma
-Dijital ikizi RViz ve Gazebo üzerinde görüntülemek için:
+Sistemi tek bir komutla ayağa kaldırmak için:
 ```bash
 ros2 launch barak_bringup barak_system.launch.py
 ```
 
-### Budak Optimizasyonu
-Modelleri Jetson üzerinde derlemek için:
-```bash
-# src/barak_perception içinde
-python3 tools/optimize_model.py --model perception_v4.onnx --target tensorrt
-```
+### Fizik Motoru Ayarları
+Gazebo üzerinde su ve kar direncini kalibre etmek için `barak_simulation/config/physics.yaml` dosyasını düzenleyebilirsiniz.
 
 ---
 
@@ -125,18 +150,8 @@ python3 tools/optimize_model.py --model perception_v4.onnx --target tensorrt
 
 BARAK projesi, **MERL Otonomi İlkeleri** uyarınca geliştirilmiştir:
 1.  **Human-in-the-Loop:** Kritik karar anlarında insan operatör denetimi.
-2.  **Fail-Safe:** İletişim kaybı durumunda "En Yakın Güvenli Nokta" (Safety Point) navigasyonu.
-3.  **Veri Gizliliği:** Keşif verilerinin yerel işlenmesi (Edge-AI) ve gizliliği.
-
----
-
-## 🗺️ Geliştirme Yol Haritası
-
-- [x] **Faz 0:** Mimari tasarım ve ROS2 iskelet kurulumu.
-- [/] **Faz 1:** Karbon-fiber takviyeli hafifletilmiş palet mekanizmasının üretimi.
-- [ ] **Faz 2:** Arazi tipine göre enerji tüketimini optimize eden "Dynamic Power Switching" algoritması.
-- [ ] **Faz 3:** Su altı sonar sensörleri ile sığ su navigasyonu eklenmesi.
-- [ ] **Faz 4:** "Monk Mode" otonomi; dış müdahale olmadan 48 saatlik keşif görevi senaryosu.
+2.  **Fail-Safe:** Beklenmedik durumlarda önceden tanımlı güvenli davranış.
+3.  **Veri Gizliliği:** "Edge-first" veri işleme yaklaşımı ile gizlilik koruması.
 
 ---
 
